@@ -12,6 +12,8 @@ This plugin monitors the following services on Synology via SNMP service:
 - UPS Charge %
 - UPS Battery Time Left
 
+* Thanks to @ycahome for SNMP Reader Plugin : https://github.com/ycahome/SNMPreader
+
 ## Installation
 1. On Synology: Open Control Panel - Terminal & SNMP - SNMP - Enable SNMP Service and SNMPv1,SNMPv2c service and note down Community password.
 2. On Domoticz install pysnmp: pip3 install pysnmp
