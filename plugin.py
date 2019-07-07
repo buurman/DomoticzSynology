@@ -14,7 +14,7 @@
     </description>
     <params>
         <param field="Address" label="Synology IP Address" width="250px" required="true" default="192.168.1.1"/>
-        <param field="Mode1" label="community" width="250px" required="true" default="community"/>
+        <param field="Mode1" label="Community" width="250px" required="true" default="community"/>
         <param field="Mode2" label="DSM OID" width="200px" required="true" default="51"/>
         <param field="Mode4" label="Check Interval(min)" width="75px" required="true" default="1"/>
         <param field="Mode6" label="Debug" width="75px">
