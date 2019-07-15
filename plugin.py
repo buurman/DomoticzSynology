@@ -1,5 +1,5 @@
 """
-<plugin key="SynoMonitor" name="Synology Monitor" author="febalci" version="1.0.0">
+<plugin key="SynoMonitor" name="Synology Monitor" author="febalci" version="1.0.2">
     <description>
         <h2>Synology Monitoring Plugin</h2><br/>
         Collects CPU, Memory, Heat and HDD Inormation from Synology NAS Units<br/>
@@ -14,7 +14,7 @@
     </description>
     <params>
         <param field="Address" label="Synology IP Address" width="250px" required="true" default="192.168.1.1"/>
-        <param field="Mode1" label="Community" width="250px" required="true" default="community"/>
+        <param field="Mode1" label="Community" width="250px" required="true" default="public"/>
         <param field="Mode2" label="DSM OID" width="200px" required="true" default="51"/>
         <param field="Mode4" label="Check Interval(min)" width="75px" required="true" default="1"/>
         <param field="Mode6" label="Debug" width="75px">
@@ -34,6 +34,10 @@ for site in site.getsitepackages():
 
 from struct import unpack
 from pysnmp.entity.rfc3413.oneliner import cmdgen
+#v.1.0.2:   UPS Check Added, no UPS devices created if UPS missing
+#           Added OL CHRG and OB DSCHRG for UPS
+#           Added 5th HDD TEMP
+#v.1.0.0:   First Commit
 
 class BasePlugin:
     enabled = False
@@ -50,10 +54,12 @@ class BasePlugin:
         self.snmpTempHD2 = '1.3.6.1.4.1.6574.2.1.1.6.1'
         self.snmpTempHD3 = '1.3.6.1.4.1.6574.2.1.1.6.2'
         self.snmpTempHD4 = '1.3.6.1.4.1.6574.2.1.1.6.3'
+        self.snmpTempHD5 = '1.3.6.1.4.1.6574.2.1.1.6.4' #v.1.0.1
         self.snmpStatusHD1 = '.1.3.6.1.4.1.6574.2.1.1.5.0'
         self.snmpStatusHD2 = '.1.3.6.1.4.1.6574.2.1.1.5.1'
         self.snmpStatusHD3 = '.1.3.6.1.4.1.6574.2.1.1.5.2'
         self.snmpStatusHD4 = '.1.3.6.1.4.1.6574.2.1.1.5.3'
+        self.snmpStatusHD5 = '.1.3.6.1.4.1.6574.2.1.1.5.4' #v.1.0.1
         self.snmpHDTotal = '1.3.6.1.2.1.25.2.3.1.5.' # Change OID to .38 on DSM 5.1, .41 on DSM 6.0, 42 on DSM 6.1, 51 on DSM 6.2
         self.snmpHDUsed = '1.3.6.1.2.1.25.2.3.1.6.' # Change OID to .38 on DSM 5.1, .41 on DSM 6.0, 42 on DSM 6.1, 51 on DSM 6.2
         self.snmpCPUUser = '1.3.6.1.4.1.2021.11.9.0'
@@ -67,6 +73,7 @@ class BasePlugin:
         self.snmpUpsInfoStatus = '.1.3.6.1.4.1.6574.4.2.1.0'
         self.snmpUpsBatteryRuntime = '.1.3.6.1.4.1.6574.4.3.6.1.0'
         self.snmpUpsBatteryCharge = '.1.3.6.1.4.1.6574.4.3.1.1.0'
+        self.ups = False
         return
 
     def onStart(self):
@@ -85,6 +92,12 @@ class BasePlugin:
         Domoticz.Debug ('Synology Model: '+self.synoModel)
         self.snmpHDTotal = self.snmpHDTotal + Parameters["Mode2"]
         self.snmpHDUsed = self.snmpHDUsed + Parameters["Mode2"]
+        self.ups = str(getSNMPvalue(self.synoIP,self.snmpUpsBatteryCharge,self.synoCommunity))
+        if self.ups[0:2] == '0x':
+            self.ups = True
+        else:
+            self.ups = False
+
 
         if (len(Devices) == 0):
             Domoticz.Device(Name=self.synoModel+' Status', Unit=1, TypeName="Text", Used=1).Create()
@@ -94,11 +107,13 @@ class BasePlugin:
             Domoticz.Device(Name=self.synoModel+' HDD2 Temperature', Unit=5, TypeName="Temperature", Used=0).Create()
             Domoticz.Device(Name=self.synoModel+' HDD3 Temperature', Unit=6, TypeName="Temperature", Used=0).Create()
             Domoticz.Device(Name=self.synoModel+' HDD4 Temperature', Unit=7, TypeName="Temperature", Used=0).Create()
+            Domoticz.Device(Name=self.synoModel+' HDD5 Temperature', Unit=13, TypeName="Temperature", Used=0).Create()
             Domoticz.Device(Name=self.synoModel+' CPU', Unit=8, TypeName="Percentage", Used=1).Create()
             Domoticz.Device(Name=self.synoModel+' Mem', Unit=9, TypeName="Percentage", Used=1).Create()
-            Domoticz.Device(Name=self.synoModel+' UPS Status', Unit=10, TypeName="Text", Used=0).Create()
-            Domoticz.Device(Name=self.synoModel+' UPS Charge', Unit=11, TypeName="Percentage", Used=0).Create()
-            Domoticz.Device(Name=self.synoModel+' UPS Time', Unit=12, TypeName="Custom", Options={"Custom": "1;mins"}, Used=0).Create()
+            if self.ups:
+                Domoticz.Device(Name=self.synoModel+' UPS Status', Unit=10, TypeName="Text", Used=0).Create()
+                Domoticz.Device(Name=self.synoModel+' UPS Charge', Unit=11, TypeName="Percentage", Used=0).Create()
+                Domoticz.Device(Name=self.synoModel+' UPS Time', Unit=12, TypeName="Custom", Options={"Custom": "1;mins"}, Used=0).Create()
 
         self.pollPeriod = 6 * int(Parameters["Mode4"]) 
         self.pollCount = self.pollPeriod - 1
@@ -162,9 +177,15 @@ class BasePlugin:
             Domoticz.Debug('HDD Used: '+hdUsed)
             hdTotal = getSNMPvalue(self.synoIP,self.snmpHDTotal,self.synoCommunity)
             Domoticz.Debug('HDD Total: '+hdTotal)
-            snmptemp = (100*int(hdUsed))/int(hdTotal)
-            Domoticz.Debug('HDD %: '+str('%.2f' % snmptemp))
-            UpdateDevice(3,0,'%.2f' % snmptemp)
+            try:
+                snmptemp = (100*int(hdUsed))/int(hdTotal)
+            except:
+                snmptemp = "Wrong DSM OID!"
+                Domoticz.Debug('HDD %: '+snmptemp)
+                UpdateDevice(3,0,snmptemp)
+            else:
+                Domoticz.Debug('HDD %: '+str('%.2f' % snmptemp))
+                UpdateDevice(3,0,'%.2f' % snmptemp)
             #NAS HDD1 Temperature
             snmptemp = str(getSNMPvalue(self.synoIP,self.snmpTempHD1,self.synoCommunity))
             Domoticz.Debug('HDD Temp 1: '+snmptemp)
@@ -181,6 +202,10 @@ class BasePlugin:
             snmptemp = str(getSNMPvalue(self.synoIP,self.snmpTempHD4,self.synoCommunity))
             Domoticz.Debug('HDD Temp 4: '+snmptemp)
             UpdateDevice(7,0,snmptemp)
+            #NAS HDD5 Temperature
+            snmptemp = str(getSNMPvalue(self.synoIP,self.snmpTempHD5,self.synoCommunity))
+            Domoticz.Debug('HDD Temp 5: '+snmptemp)
+            UpdateDevice(13,0,snmptemp)
             #UPS Status
             snmptemp = str(getSNMPvalue(self.synoIP,self.snmpUpsInfoStatus,self.synoCommunity))
             Domoticz.Debug('UPS Status: '+snmptemp)
@@ -194,6 +219,10 @@ class BasePlugin:
                 snmptemp = 'HIGH BATTERY'
             elif snmptemp == 'RB':
                 snmptemp = 'REPLACE BATTERY'
+            elif snmptemp == 'OL CHRG':
+                snmptemp = 'ONLINE CHARGING'
+            elif snmptemp == 'OB DISCHRG':
+                snmptemp = 'ON BATTERY DISCHARGING'
             elif snmptemp == 'CHRG':
                 snmptemp = 'CHARGING'
             elif snmptemp == 'DISCHRG':
@@ -215,21 +244,22 @@ class BasePlugin:
             else:
                 snmptemp = 'UNKNOWN'
             UpdateDevice(10,0,snmptemp)
-            #UPS Charge
-            snmptemp = str(getSNMPvalue(self.synoIP,self.snmpUpsBatteryCharge,self.synoCommunity))
-            Domoticz.Debug('UPS Charge1: '+snmptemp)
-            snmptemp = bytes.fromhex(snmptemp[2:])
-            if snmptemp.startswith(b'\x9f\x78'):
-                snmptemp = unpack("!f", snmptemp[3:])[0]
-            snmptemp = str(snmptemp)
-            Domoticz.Debug('UPS Charge2: '+snmptemp)
-
-            UpdateDevice(11,0,snmptemp)
-            #UPS Time
-            snmptemp = str(getSNMPvalue(self.synoIP,self.snmpUpsBatteryRuntime,self.synoCommunity))
-            Domoticz.Debug('UPS Time: '+snmptemp)
-            snmptemp = int(snmptemp)/60
-            UpdateDevice(12,0,'%.0f' % snmptemp)
+            if self.ups:
+                #UPS Charge
+                snmptemp = str(getSNMPvalue(self.synoIP,self.snmpUpsBatteryCharge,self.synoCommunity))
+                Domoticz.Debug('UPS Charge1: '+snmptemp)
+                snmptemp = bytes.fromhex(snmptemp[2:])
+                if snmptemp.startswith(b'\x9f\x78'):
+                    snmptemp = unpack("!f", snmptemp[3:])[0]
+                snmptemp = str(snmptemp)
+                Domoticz.Debug('UPS Charge2: '+snmptemp)
+    
+                UpdateDevice(11,0,snmptemp)
+                #UPS Time
+                snmptemp = str(getSNMPvalue(self.synoIP,self.snmpUpsBatteryRuntime,self.synoCommunity))
+                Domoticz.Debug('UPS Time: '+snmptemp)
+                snmptemp = int(snmptemp)/60
+                UpdateDevice(12,0,'%.0f' % snmptemp)
 
             self.pollCount = 0 #Reset Pollcount
         else:
