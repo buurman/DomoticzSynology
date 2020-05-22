@@ -55,11 +55,17 @@ class BasePlugin:
         self.snmpTempHD3 = '1.3.6.1.4.1.6574.2.1.1.6.2'
         self.snmpTempHD4 = '1.3.6.1.4.1.6574.2.1.1.6.3'
         self.snmpTempHD5 = '1.3.6.1.4.1.6574.2.1.1.6.4' #v.1.0.1
+        self.snmpTempHD6 = '1.3.6.1.4.1.6574.2.1.1.6.5' #v.1.1
+        self.snmpTempHD7 = '1.3.6.1.4.1.6574.2.1.1.6.6' #v.1.1
+        self.snmpTempHD8 = '1.3.6.1.4.1.6574.2.1.1.6.7' #v.1.1
         self.snmpStatusHD1 = '.1.3.6.1.4.1.6574.2.1.1.5.0'
         self.snmpStatusHD2 = '.1.3.6.1.4.1.6574.2.1.1.5.1'
         self.snmpStatusHD3 = '.1.3.6.1.4.1.6574.2.1.1.5.2'
         self.snmpStatusHD4 = '.1.3.6.1.4.1.6574.2.1.1.5.3'
         self.snmpStatusHD5 = '.1.3.6.1.4.1.6574.2.1.1.5.4' #v.1.0.1
+        self.snmpStatusHD6 = '.1.3.6.1.4.1.6574.2.1.1.5.5' #v.1.1
+        self.snmpStatusHD7 = '.1.3.6.1.4.1.6574.2.1.1.5.6' #v.1.1
+        self.snmpStatusHD8 = '.1.3.6.1.4.1.6574.2.1.1.5.7' #v.1.1
         self.snmpHDTotal = '1.3.6.1.2.1.25.2.3.1.5.' # Change OID to .38 on DSM 5.1, .41 on DSM 6.0, 42 on DSM 6.1, 51 on DSM 6.2
         self.snmpHDUsed = '1.3.6.1.2.1.25.2.3.1.6.' # Change OID to .38 on DSM 5.1, .41 on DSM 6.0, 42 on DSM 6.1, 51 on DSM 6.2
         self.snmpCPUUser = '1.3.6.1.4.1.2021.11.9.0'
@@ -108,6 +114,9 @@ class BasePlugin:
             Domoticz.Device(Name=self.synoModel+' HDD3 Temperature', Unit=6, TypeName="Temperature", Used=0).Create()
             Domoticz.Device(Name=self.synoModel+' HDD4 Temperature', Unit=7, TypeName="Temperature", Used=0).Create()
             Domoticz.Device(Name=self.synoModel+' HDD5 Temperature', Unit=13, TypeName="Temperature", Used=0).Create()
+            Domoticz.Device(Name=self.synoModel+' HDD6 Temperature', Unit=14, TypeName="Temperature", Used=0).Create()
+            Domoticz.Device(Name=self.synoModel+' HDD7 Temperature', Unit=15, TypeName="Temperature", Used=0).Create()
+            Domoticz.Device(Name=self.synoModel+' HDD8 Temperature', Unit=16, TypeName="Temperature", Used=0).Create()
             Domoticz.Device(Name=self.synoModel+' CPU', Unit=8, TypeName="Percentage", Used=1).Create()
             Domoticz.Device(Name=self.synoModel+' Mem', Unit=9, TypeName="Percentage", Used=1).Create()
             if self.ups:
@@ -206,6 +215,18 @@ class BasePlugin:
             snmptemp = str(getSNMPvalue(self.synoIP,self.snmpTempHD5,self.synoCommunity))
             Domoticz.Debug('HDD Temp 5: '+snmptemp)
             UpdateDevice(13,0,snmptemp)
+            #NAS HDD6 Temperature
+            snmptemp = str(getSNMPvalue(self.synoIP,self.snmpTempHD5,self.synoCommunity))
+            Domoticz.Debug('HDD Temp 8: '+snmptemp)
+            UpdateDevice(14,0,snmptemp)
+            #NAS HDD7 Temperature
+            snmptemp = str(getSNMPvalue(self.synoIP,self.snmpTempHD5,self.synoCommunity))
+            Domoticz.Debug('HDD Temp 7: '+snmptemp)
+            UpdateDevice(15,0,snmptemp)
+            #NAS HDD8 Temperature
+            snmptemp = str(getSNMPvalue(self.synoIP,self.snmpTempHD5,self.synoCommunity))
+            Domoticz.Debug('HDD Temp 8: '+snmptemp)
+            UpdateDevice(16,0,snmptemp)
             #UPS Status
             snmptemp = str(getSNMPvalue(self.synoIP,self.snmpUpsInfoStatus,self.synoCommunity))
             Domoticz.Debug('UPS Status: '+snmptemp)
