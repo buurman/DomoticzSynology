@@ -34,6 +34,7 @@ for site in site.getsitepackages():
 
 from struct import unpack
 from pysnmp.entity.rfc3413.oneliner import cmdgen
+#1.1:       Added up to 8 HDD devices
 #v.1.0.2:   UPS Check Added, no UPS devices created if UPS missing
 #           Added OL CHRG and OB DSCHRG for UPS
 #           Added 5th HDD TEMP
