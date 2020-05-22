@@ -216,15 +216,15 @@ class BasePlugin:
             Domoticz.Debug('HDD Temp 5: '+snmptemp)
             UpdateDevice(13,0,snmptemp)
             #NAS HDD6 Temperature
-            snmptemp = str(getSNMPvalue(self.synoIP,self.snmpTempHD5,self.synoCommunity))
-            Domoticz.Debug('HDD Temp 8: '+snmptemp)
+            snmptemp = str(getSNMPvalue(self.synoIP,self.snmpTempHD6,self.synoCommunity))
+            Domoticz.Debug('HDD Temp 6: '+snmptemp)
             UpdateDevice(14,0,snmptemp)
             #NAS HDD7 Temperature
-            snmptemp = str(getSNMPvalue(self.synoIP,self.snmpTempHD5,self.synoCommunity))
+            snmptemp = str(getSNMPvalue(self.synoIP,self.snmpTempHD7,self.synoCommunity))
             Domoticz.Debug('HDD Temp 7: '+snmptemp)
             UpdateDevice(15,0,snmptemp)
             #NAS HDD8 Temperature
-            snmptemp = str(getSNMPvalue(self.synoIP,self.snmpTempHD5,self.synoCommunity))
+            snmptemp = str(getSNMPvalue(self.synoIP,self.snmpTempHD8,self.synoCommunity))
             Domoticz.Debug('HDD Temp 8: '+snmptemp)
             UpdateDevice(16,0,snmptemp)
             #UPS Status
